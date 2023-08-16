@@ -1,7 +1,7 @@
 // simple MCU interface driver for the displays.
 // Mostly from ESP examples/peripherals/lcd
 
-static const char *TAG = "lcd-mcu";
+static const char* TAG = "lcd-mcu";
 
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
@@ -18,13 +18,13 @@ static const char *TAG = "lcd-mcu";
 #include "lvgl_helpers.h"
 #include "disp_mcu.h"
 
-#define MCU_LCD_PIXEL_CLOCK_HZ (20 * 1000 * 1000)
+#define MCU_LCD_PIXEL_CLOCK_HZ (10 * 1000 * 1000)
 
 static esp_lcd_i80_bus_handle_t i80_bus = NULL;
 static esp_lcd_i80_bus_config_t bus_config = {
     .dc_gpio_num = CONFIG_LV_TFT_MCU_DC_NUM,
     .wr_gpio_num = CONFIG_LV_TFT_MCU_WR_NUM,
-    .clk_src = LCD_CLK_SRC_PLL160M,
+    .clk_src = LCD_CLK_SRC_DEFAULT,
     .data_gpio_nums = {
         CONFIG_LV_TFT_MCU_DATA0,
         CONFIG_LV_TFT_MCU_DATA1,
@@ -50,10 +50,12 @@ static esp_lcd_i80_bus_config_t bus_config = {
 #else
     .bus_width = 8,
 #endif
-    .max_transfer_bytes = DISP_BUF_SIZE * sizeof(lv_color_t)
+    .max_transfer_bytes = DISP_BUF_SIZE * sizeof(lv_color_t),
+    .psram_trans_align = 64,
+    .sram_trans_align = 4,
 };
 
-static bool mcu_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx);
+static bool mcu_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t* edata, void* user_ctx);
 
 static esp_lcd_panel_io_handle_t io_handle = NULL;
 static esp_lcd_panel_io_i80_config_t io_config = {
@@ -90,19 +92,17 @@ static esp_lcd_panel_io_i80_config_t io_config = {
 static esp_lcd_panel_handle_t panel_handle = NULL;
 static esp_lcd_panel_dev_config_t panel_config = {
     .reset_gpio_num = CONFIG_LV_TFT_MCU_RST_NUM,
-    .color_space = ESP_LCD_COLOR_SPACE_RGB,
+    .rgb_endian = LCD_RGB_ENDIAN_BGR,
     .bits_per_pixel = sizeof(lv_color_t) * 8,
 };
 
-static bool mcu_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
-{
-    lv_disp_drv_t *disp_driver = (lv_disp_drv_t *)user_ctx;
+static bool mcu_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t* edata, void* user_ctx) {
+    lv_disp_drv_t* disp_driver = (lv_disp_drv_t*)user_ctx;
     lv_disp_flush_ready(disp_driver);
     return false;
 }
 
-void lcd_mcu_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
-{
+void lcd_mcu_lvgl_flush_cb(lv_disp_drv_t* drv, const lv_area_t* area, lv_color_t* color_map) {
     // use the static one esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data;
     int offsetx1 = area->x1;
     int offsetx2 = area->x2;
@@ -113,21 +113,23 @@ void lcd_mcu_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
 }
 
 #if defined CONFIG_LV_TFT_DISPLAY_CONTROLLER_HX8357
-extern esp_err_t esp_lcd_new_panel_hx8357(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config, esp_lcd_panel_handle_t *ret_panel);
+extern esp_err_t esp_lcd_new_panel_hx8357(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t* panel_dev_config, esp_lcd_panel_handle_t* ret_panel);
 #endif
 
-void disp_mcu_panel_init(lv_disp_drv_t *disp_drv) {
+void disp_mcu_panel_init(lv_disp_drv_t* disp_drv) {
     ESP_LOGI(TAG, "Initialize Intel 8080 bus");
 
-    io_config.user_ctx = disp_drv; // for the flush_ready cb
+    io_config.user_ctx = disp_drv;  // for the flush_ready cb
 
     ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
 #if defined CONFIG_LV_TFT_DISPLAY_CONTROLLER_HX8357
+    ESP_LOGI(TAG, "Lcd Panel New");
     ESP_ERROR_CHECK(esp_lcd_new_panel_hx8357(io_handle, &panel_config, &panel_handle));
 #endif
     esp_lcd_panel_reset(panel_handle);
     esp_lcd_panel_init(panel_handle);
     // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
-    //esp_lcd_panel_set_gap(panel_handle, 0, 20);
+    // esp_lcd_panel_set_gap(panel_handle, 0, 20);
+    ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 }

@@ -20,17 +20,17 @@
 #include "esp_check.h"
 #include "hx8357.h"
 
-static const char *TAG = "lcd_panel.hx8357";
+static const char* TAG = "lcd_panel.hx8357";
 
-static esp_err_t panel_hx8357_del(esp_lcd_panel_t *panel);
-static esp_err_t panel_hx8357_reset(esp_lcd_panel_t *panel);
-static esp_err_t panel_hx8357_init(esp_lcd_panel_t *panel);
-static esp_err_t panel_hx8357_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data);
-static esp_err_t panel_hx8357_invert_color(esp_lcd_panel_t *panel, bool invert_color_data);
-static esp_err_t panel_hx8357_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
-static esp_err_t panel_hx8357_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
-static esp_err_t panel_hx8357_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
-static esp_err_t panel_hx8357_disp_on_off(esp_lcd_panel_t *panel, bool on_off);
+static esp_err_t panel_hx8357_del(esp_lcd_panel_t* panel);
+static esp_err_t panel_hx8357_reset(esp_lcd_panel_t* panel);
+static esp_err_t panel_hx8357_init(esp_lcd_panel_t* panel);
+static esp_err_t panel_hx8357_draw_bitmap(esp_lcd_panel_t* panel, int x_start, int y_start, int x_end, int y_end, const void* color_data);
+static esp_err_t panel_hx8357_invert_color(esp_lcd_panel_t* panel, bool invert_color_data);
+static esp_err_t panel_hx8357_mirror(esp_lcd_panel_t* panel, bool mirror_x, bool mirror_y);
+static esp_err_t panel_hx8357_swap_xy(esp_lcd_panel_t* panel, bool swap_axes);
+static esp_err_t panel_hx8357_set_gap(esp_lcd_panel_t* panel, int x_gap, int y_gap);
+static esp_err_t panel_hx8357_disp_on_off(esp_lcd_panel_t* panel, bool on_off);
 
 typedef struct {
     esp_lcd_panel_t base;
@@ -40,14 +40,13 @@ typedef struct {
     int x_gap;
     int y_gap;
     uint8_t fb_bits_per_pixel;
-    uint8_t madctl_val; // save current value of LCD_CMD_MADCTL register
-    uint8_t colmod_cal; // save surrent value of LCD_CMD_COLMOD register
+    uint8_t madctl_val;  // save current value of LCD_CMD_MADCTL register
+    uint8_t colmod_cal;  // save surrent value of LCD_CMD_COLMOD register
 } hx8357_panel_t;
 
-esp_err_t esp_lcd_new_panel_hx8357(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config, esp_lcd_panel_handle_t *ret_panel)
-{
+esp_err_t esp_lcd_new_panel_hx8357(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t* panel_dev_config, esp_lcd_panel_handle_t* ret_panel) {
     esp_err_t ret = ESP_OK;
-    hx8357_panel_t *hx8357 = NULL;
+    hx8357_panel_t* hx8357 = NULL;
     ESP_GOTO_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     hx8357 = calloc(1, sizeof(hx8357_panel_t));
     ESP_GOTO_ON_FALSE(hx8357, ESP_ERR_NO_MEM, err, TAG, "no mem for hx8357 panel");
@@ -61,31 +60,31 @@ esp_err_t esp_lcd_new_panel_hx8357(const esp_lcd_panel_io_handle_t io, const esp
     }
 
     switch (panel_dev_config->color_space) {
-    case ESP_LCD_COLOR_SPACE_RGB:
-        hx8357->madctl_val = 0;
-        break;
-    case ESP_LCD_COLOR_SPACE_BGR:
-        hx8357->madctl_val |= LCD_CMD_BGR_BIT;
-        break;
-    default:
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported color space");
-        break;
+        case ESP_LCD_COLOR_SPACE_RGB:
+            hx8357->madctl_val = 0;
+            break;
+        case ESP_LCD_COLOR_SPACE_BGR:
+            hx8357->madctl_val |= LCD_CMD_BGR_BIT;
+            break;
+        default:
+            ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported color space");
+            break;
     }
 
     uint8_t fb_bits_per_pixel = 0;
     switch (panel_dev_config->bits_per_pixel) {
-    case 16: // RGB565
-        hx8357->colmod_cal = 0x55;
-        fb_bits_per_pixel = 16;
-        break;
-    case 18: // RGB666
-        hx8357->colmod_cal = 0x66;
-        // each color component (R/G/B) should occupy the 6 high bits of a byte, which means 3 full bytes are required for a pixel
-        fb_bits_per_pixel = 24;
-        break;
-    default:
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported pixel width");
-        break;
+        case 16:  // RGB565
+            hx8357->colmod_cal = 0x55;
+            fb_bits_per_pixel = 16;
+            break;
+        case 18:  // RGB666
+            hx8357->colmod_cal = 0x66;
+            // each color component (R/G/B) should occupy the 6 high bits of a byte, which means 3 full bytes are required for a pixel
+            fb_bits_per_pixel = 24;
+            break;
+        default:
+            ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported pixel width");
+            break;
     }
 
     hx8357->io = io;
@@ -116,9 +115,8 @@ err:
     return ret;
 }
 
-static esp_err_t panel_hx8357_del(esp_lcd_panel_t *panel)
-{
-    hx8357_panel_t *hx8357 = __containerof(panel, hx8357_panel_t, base);
+static esp_err_t panel_hx8357_del(esp_lcd_panel_t* panel) {
+    hx8357_panel_t* hx8357 = __containerof(panel, hx8357_panel_t, base);
 
     if (hx8357->reset_gpio_num >= 0) {
         gpio_reset_pin(hx8357->reset_gpio_num);
@@ -128,9 +126,8 @@ static esp_err_t panel_hx8357_del(esp_lcd_panel_t *panel)
     return ESP_OK;
 }
 
-static esp_err_t panel_hx8357_reset(esp_lcd_panel_t *panel)
-{
-    hx8357_panel_t *hx8357 = __containerof(panel, hx8357_panel_t, base);
+static esp_err_t panel_hx8357_reset(esp_lcd_panel_t* panel) {
+    hx8357_panel_t* hx8357 = __containerof(panel, hx8357_panel_t, base);
     esp_lcd_panel_io_handle_t io = hx8357->io;
 
     // perform hardware reset
@@ -139,127 +136,67 @@ static esp_err_t panel_hx8357_reset(esp_lcd_panel_t *panel)
         vTaskDelay(pdMS_TO_TICKS(10));
         gpio_set_level(hx8357->reset_gpio_num, !hx8357->reset_level);
         vTaskDelay(pdMS_TO_TICKS(10));
-    } else { // perform software reset
+    } else {  // perform software reset
         esp_lcd_panel_io_tx_param(io, LCD_CMD_SWRESET, NULL, 0);
-        vTaskDelay(pdMS_TO_TICKS(20)); // spec, wait at least 5m before sending new command
+        vTaskDelay(pdMS_TO_TICKS(20));  // spec, wait at least 5m before sending new command
     }
 
     return ESP_OK;
 }
 
-const uint8_t
-  initb[] = {
-    HX8357B_SETPOWER, 3,
-      0x44, 0x41, 0x06,
-    HX8357B_SETVCOM, 2,
-      0x40, 0x10,
-    HX8357B_SETPWRNORMAL, 2,
-      0x05, 0x12,
-    HX8357B_SET_PANEL_DRIVING, 5,
-      0x14, 0x3b, 0x00, 0x02, 0x11,
-    HX8357B_SETDISPLAYFRAME, 1,
-      0x0c,                      // 6.8mhz
-    HX8357B_SETPANELRELATED, 1,
-      0x01,                      // BGR
-    0xEA, 3,                     // seq_undefined1, 3 args
-      0x03, 0x00, 0x00,
-    0xEB, 4,                     // undef2, 4 args
-      0x40, 0x54, 0x26, 0xdb,
-    HX8357B_SETGAMMA, 12,
-      0x00, 0x15, 0x00, 0x22, 0x00, 0x08, 0x77, 0x26, 0x66, 0x22, 0x04, 0x00,
-    HX8357_MADCTL, 1,
-      0xC0,
-    HX8357_COLMOD, 1,
-      0x55,
-    HX8357_PASET, 4,
-      0x00, 0x00, 0x01, 0xDF,
-    HX8357_CASET, 4,
-      0x00, 0x00, 0x01, 0x3F,
-    HX8357B_SETDISPMODE, 1,
-      0x00,                      // CPU (DBI) and internal oscillation ??
-    HX8357_SLPOUT, 0x80 + 120/5, // Exit sleep, then delay 120 ms
-    HX8357_DISPON, 0x80 +  10/5, // Main screen turn on, delay 10 ms
-    0                            // END OF COMMAND LIST
-  }, initd[] = {
-    HX8357_SWRESET, 0x80 + 100/5, // Soft reset, then delay 10 ms
-    HX8357D_SETC, 3,
-      0xFF, 0x83, 0x57,
-    0xFF, 0x80 + 500/5,          // No command, just delay 300 ms
-    HX8357_SETRGB, 4,
-      0x80, 0x00, 0x06, 0x06,    // 0x80 enables SDO pin (0x00 disables)
-    HX8357D_SETCOM, 1,
-      0x25,                      // -1.52V
-    HX8357_SETOSC, 1,
-      0x68,                      // Normal mode 70Hz, Idle mode 55 Hz
-    HX8357_SETPANEL, 1,
-      0x05,                      // BGR, Gate direction swapped
-    HX8357_SETPWR1, 6,
-      0x00,                      // Not deep standby
-      0x15,                      // BT
-      0x1C,                      // VSPR
-      0x1C,                      // VSNR
-      0x83,                      // AP
-      0xAA,                      // FS
-    HX8357D_SETSTBA, 6,
-      0x50,                      // OPON normal
-      0x50,                      // OPON idle
-      0x01,                      // STBA
-      0x3C,                      // STBA
-      0x1E,                      // STBA
-      0x08,                      // GEN
-    HX8357D_SETCYC, 7,
-      0x02,                      // NW 0x02
-      0x40,                      // RTN
-      0x00,                      // DIV
-      0x2A,                      // DUM
-      0x2A,                      // DUM
-      0x0D,                      // GDON
-      0x78,                      // GDOFF
-    HX8357_COLMOD, 1,
-      0x55,                      // 16 bit
-    HX8357_MADCTL, 1,
-      0xC0,
-    HX8357_TEON, 1,
-      0x00,                      // TW off
-    HX8357_TEARLINE, 2,
-      0x00, 0x02,
-    HX8357_SLPOUT, 0x80 + 150/5, // Exit Sleep, then delay 150 ms
-    HX8357_DISPON, 0x80 +  50/5, // Main screen turn on, delay 50 ms
-    0,                           // END OF COMMAND LIST
-  };
+typedef struct {
+    uint8_t cmd;
+    uint8_t data[16];
+    uint8_t data_bytes;  // Length of data in above data array; 0xFF = end of cmds.
+} lcd_init_cmd_t;
 
-uint8_t displayType = HX8357D;
-static esp_err_t panel_hx8357_init(esp_lcd_panel_t *panel)
-{
-    hx8357_panel_t *hx8357 = __containerof(panel, hx8357_panel_t, base);
+static const lcd_init_cmd_t vendor_specific_init[] = {
+    {0xf0, {0xc3}, 1},
+    {0xf0, {0x96}, 1},
+    {0xb4, {0x01}, 1},
+    {0xb7, {0xc6}, 1},
+    {0xe8, {0x40, 0x8a, 0x00, 0x00, 0x29, 0x19, 0xa5, 0x33}, 8},
+    {0xc1, {0x06}, 1},
+    {0xc2, {0xa7}, 1},
+    {0xc5, {0x18}, 1},
+    {0xe0, {0xf0, 0x09, 0x0b, 0x06, 0x04, 0x15, 0x2f, 0x54, 0x42, 0x3c, 0x17, 0x14, 0x18, 0x1b}, 14},
+    {0xe1, {0xf0, 0x09, 0x0b, 0x06, 0x04, 0x03, 0x2d, 0x43, 0x42, 0x3b, 0x16, 0x14, 0x17, 0x1b}, 14},
+    {0xf0, {0x3c}, 1},
+    {0xf0, {0x69}, 1},
+    {0, {0}, 0xff},
+};
+
+static esp_err_t panel_hx8357_init(esp_lcd_panel_t* panel) {
+    hx8357_panel_t* hx8357 = __containerof(panel, hx8357_panel_t, base);
     esp_lcd_panel_io_handle_t io = hx8357->io;
 
-  	const uint8_t *addr = (displayType == HX8357B) ? initb : initd;
-	  uint8_t        cmd, x, numArgs;
-	  while((cmd = *addr++) > 0) { // '0' command ends list
-		    x = *addr++;
-		    numArgs = x & 0x7F;
-		    if (cmd != 0xFF) { // '255' is ignored
-			      if (x & 0x80) {  // If high bit set, numArgs is a delay time
-                esp_lcd_panel_io_tx_param(io, cmd, NULL, 0);
-			      } else {
-                esp_lcd_panel_io_tx_param(io, cmd, addr, numArgs);
-				        addr += numArgs;
-			      }
-		    }
-		    if (x & 0x80) {       // If high bit set...
-			      vTaskDelay(numArgs * 5 / portTICK_PERIOD_MS); // numArgs is actually a delay time (5ms units)
-		    }
-	  }
+    // LCD goes into sleep mode and display will be turned off after power on reset, exit sleep mode first
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_SLPOUT, NULL, 0);
+    vTaskDelay(pdMS_TO_TICKS(100));
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]){
+                                                      hx8357->madctl_val,
+                                                  },
+                              1);
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_COLMOD, (uint8_t[]){
+                                                      hx8357->colmod_cal,
+                                                  },
+                              1);
+
+    // vendor specific initialization, it can be different between manufacturers
+    // should consult the LCD supplier for initialization sequence code
+    int cmd = 0;
+    while (vendor_specific_init[cmd].data_bytes != 0xff) {
+        esp_lcd_panel_io_tx_param(io, vendor_specific_init[cmd].cmd, vendor_specific_init[cmd].data, vendor_specific_init[cmd].data_bytes & 0x1F);
+        cmd++;
+    }
 
     panel_hx8357_swap_xy(panel, true);
-    panel_hx8357_mirror(panel, true, false);
+    panel_hx8357_mirror(panel, true, true);
     return ESP_OK;
 }
 
-static esp_err_t panel_hx8357_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data)
-{
-    hx8357_panel_t *hx8357 = __containerof(panel, hx8357_panel_t, base);
+static esp_err_t panel_hx8357_draw_bitmap(esp_lcd_panel_t* panel, int x_start, int y_start, int x_end, int y_end, const void* color_data) {
+    hx8357_panel_t* hx8357 = __containerof(panel, hx8357_panel_t, base);
     assert((x_start < x_end) && (y_start < y_end) && "start position must be smaller than end position");
     esp_lcd_panel_io_handle_t io = hx8357->io;
 
@@ -269,18 +206,20 @@ static esp_err_t panel_hx8357_draw_bitmap(esp_lcd_panel_t *panel, int x_start, i
     y_end += hx8357->y_gap;
 
     // define an area of frame memory where MCU can access
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_CASET, (uint8_t[]) {
-        (x_start >> 8) & 0xFF,
-        x_start & 0xFF,
-        ((x_end - 1) >> 8) & 0xFF,
-        (x_end - 1) & 0xFF,
-    }, 4);
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_RASET, (uint8_t[]) {
-        (y_start >> 8) & 0xFF,
-        y_start & 0xFF,
-        ((y_end - 1) >> 8) & 0xFF,
-        (y_end - 1) & 0xFF,
-    }, 4);
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_CASET, (uint8_t[]){
+                                                     (x_start >> 8) & 0xFF,
+                                                     x_start & 0xFF,
+                                                     ((x_end - 1) >> 8) & 0xFF,
+                                                     (x_end - 1) & 0xFF,
+                                                 },
+                              4);
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_RASET, (uint8_t[]){
+                                                     (y_start >> 8) & 0xFF,
+                                                     y_start & 0xFF,
+                                                     ((y_end - 1) >> 8) & 0xFF,
+                                                     (y_end - 1) & 0xFF,
+                                                 },
+                              4);
     // transfer frame buffer
     size_t len = (x_end - x_start) * (y_end - y_start) * hx8357->fb_bits_per_pixel / 8;
     esp_lcd_panel_io_tx_color(io, LCD_CMD_RAMWR, color_data, len);
@@ -288,9 +227,8 @@ static esp_err_t panel_hx8357_draw_bitmap(esp_lcd_panel_t *panel, int x_start, i
     return ESP_OK;
 }
 
-static esp_err_t panel_hx8357_invert_color(esp_lcd_panel_t *panel, bool invert_color_data)
-{
-    hx8357_panel_t *hx8357 = __containerof(panel, hx8357_panel_t, base);
+static esp_err_t panel_hx8357_invert_color(esp_lcd_panel_t* panel, bool invert_color_data) {
+    hx8357_panel_t* hx8357 = __containerof(panel, hx8357_panel_t, base);
     esp_lcd_panel_io_handle_t io = hx8357->io;
     int command = 0;
     if (invert_color_data) {
@@ -302,9 +240,8 @@ static esp_err_t panel_hx8357_invert_color(esp_lcd_panel_t *panel, bool invert_c
     return ESP_OK;
 }
 
-static esp_err_t panel_hx8357_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y)
-{
-    hx8357_panel_t *hx8357 = __containerof(panel, hx8357_panel_t, base);
+static esp_err_t panel_hx8357_mirror(esp_lcd_panel_t* panel, bool mirror_x, bool mirror_y) {
+    hx8357_panel_t* hx8357 = __containerof(panel, hx8357_panel_t, base);
     esp_lcd_panel_io_handle_t io = hx8357->io;
     if (mirror_x) {
         hx8357->madctl_val |= LCD_CMD_MX_BIT;
@@ -316,38 +253,31 @@ static esp_err_t panel_hx8357_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool
     } else {
         hx8357->madctl_val &= ~LCD_CMD_MY_BIT;
     }
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]) {
-        hx8357->madctl_val
-    }, 1);
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]){hx8357->madctl_val}, 1);
     return ESP_OK;
 }
 
-static esp_err_t panel_hx8357_swap_xy(esp_lcd_panel_t *panel, bool swap_axes)
-{
-    hx8357_panel_t *hx8357 = __containerof(panel, hx8357_panel_t, base);
+static esp_err_t panel_hx8357_swap_xy(esp_lcd_panel_t* panel, bool swap_axes) {
+    hx8357_panel_t* hx8357 = __containerof(panel, hx8357_panel_t, base);
     esp_lcd_panel_io_handle_t io = hx8357->io;
     if (swap_axes) {
         hx8357->madctl_val |= LCD_CMD_MV_BIT;
     } else {
         hx8357->madctl_val &= ~LCD_CMD_MV_BIT;
     }
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]) {
-        hx8357->madctl_val
-    }, 1);
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]){hx8357->madctl_val}, 1);
     return ESP_OK;
 }
 
-static esp_err_t panel_hx8357_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap)
-{
-    hx8357_panel_t *hx8357 = __containerof(panel, hx8357_panel_t, base);
+static esp_err_t panel_hx8357_set_gap(esp_lcd_panel_t* panel, int x_gap, int y_gap) {
+    hx8357_panel_t* hx8357 = __containerof(panel, hx8357_panel_t, base);
     hx8357->x_gap = x_gap;
     hx8357->y_gap = y_gap;
     return ESP_OK;
 }
 
-static esp_err_t panel_hx8357_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
-{
-    hx8357_panel_t *hx8357 = __containerof(panel, hx8357_panel_t, base);
+static esp_err_t panel_hx8357_disp_on_off(esp_lcd_panel_t* panel, bool on_off) {
+    hx8357_panel_t* hx8357 = __containerof(panel, hx8357_panel_t, base);
     esp_lcd_panel_io_handle_t io = hx8357->io;
     int command = 0;
     if (!on_off) {
