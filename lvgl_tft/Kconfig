@@ -47,6 +47,10 @@ menu "LVGL TFT Display controller"
             bool "Adafruit 3.5 Featherwing Parralel Bus"
             select LV_TFT_DISPLAY_CONTROLLER_HX8357
             select LV_TFT_DISPLAY_PROTOCOL_MCU
+      config LV_PREDEFINED_DISPLAY_ST7796U_MCU
+              bool "ST7796I 3.5 Parralel Bus"
+              select LV_TFT_DISPLAY_CONTROLLER_ST7796U
+              select LV_TFT_DISPLAY_PROTOCOL_MCU
        config LV_PREDEFINED_DISPLAY_RPI_MPI3501
             bool "RPi MPI3501"
             select LV_TFT_DISPLAY_CONTROLLER_ILI9486
@@ -132,6 +136,11 @@ menu "LVGL TFT Display controller"
         bool
         help
             HX8357 display controller.
+          
+    config LV_TFT_DISPLAY_CONTROLLER_ST7796U
+        bool 
+        help
+            ST7796U display controller
 
     config LV_TFT_DISPLAY_CONTROLLER_SH1107
         bool
@@ -380,6 +389,10 @@ menu "LVGL TFT Display controller"
         bool "HX8357"
             select LV_TFT_DISPLAY_CONTROLLER_HX8357
             select LV_TFT_DISPLAY_PROTOCOL_SPI
+    config LV_TFT_DISPLAY_USER_CONTROLLER_ST7796U
+        bool "ST7796U"
+            select LV_TFT_DISPLAY_CONTROLLER_ST7796U
+            select LV_TFT_DISPLAY_PROTOCOL_SPI
     config LV_TFT_DISPLAY_USER_CONTROLLER_SH1107
         bool "SH1107"
             select LV_TFT_DISPLAY_CONTROLLER_SH1107
@@ -595,6 +608,7 @@ menu "LVGL TFT Display controller"
         default LV_TFT_SPI_CLK_DIVIDER_3 if LV_TFT_DISPLAY_CONTROLLER_HX8357
         default LV_TFT_SPI_CLK_DIVIDER_10 if LV_TFT_DISPLAY_CONTROLLER_SH1107
         default LV_TFT_SPI_CLK_DIVIDER_16 if LV_TFT_DISPLAY_CONTROLLER_JD79653A || LV_TFT_DISPLAY_CONTROLLER_UC8151D
+        default LV_TFT_SPI_CLK_DIVIDER_2 if LV_TFT_DISPLAY_CONTROLLER_ST7796U
         default LV_TFT_SPI_CLK_DIVIDER_2
 
         config LV_TFT_SPI_CLK_DIVIDER_1

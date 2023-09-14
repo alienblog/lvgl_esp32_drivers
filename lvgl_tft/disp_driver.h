@@ -32,6 +32,8 @@ extern "C" {
 #include "st7735s.h"
 #elif defined CONFIG_LV_TFT_DISPLAY_CONTROLLER_HX8357
 #include "hx8357.h"
+#elif defined CONFIG_LV_TFT_DISPLAY_CONTROLLER_ST7796U
+#include "st7796s.h"
 #elif defined CONFIG_LV_TFT_DISPLAY_CONTROLLER_ILI9486
 #include "ili9486.h"
 #elif defined CONFIG_LV_TFT_DISPLAY_CONTROLLER_SH1107
@@ -72,14 +74,16 @@ extern "C" {
 void *disp_driver_init(lv_disp_drv_t *disp_drv);
 
 /* Display flush callback */
-void disp_driver_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * color_map);
+void disp_driver_flush(lv_disp_drv_t *drv, const lv_area_t *area,
+                       lv_color_t *color_map);
 
 /* Display rounder callback, used with monochrome dispays */
-void disp_driver_rounder(lv_disp_drv_t * disp_drv, lv_area_t * area);
+void disp_driver_rounder(lv_disp_drv_t *disp_drv, lv_area_t *area);
 
 /* Display set_px callback, used with monochrome dispays */
-void disp_driver_set_px(lv_disp_drv_t * disp_drv, uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
-    lv_color_t color, lv_opa_t opa);
+void disp_driver_set_px(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w,
+                        lv_coord_t x, lv_coord_t y, lv_color_t color,
+                        lv_opa_t opa);
 
 /**********************
  *      MACROS
