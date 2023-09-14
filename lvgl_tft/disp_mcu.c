@@ -154,6 +154,7 @@ void disp_mcu_panel_init(lv_disp_drv_t* disp_drv)
       esp_lcd_new_panel_st7796u(io_handle, &panel_config, &panel_handle));
 #endif
   esp_lcd_panel_reset(panel_handle);
+  vTaskDelay(pdMS_TO_TICKS(120));
   esp_lcd_panel_init(panel_handle);
   // the gap is LCD panel specific, even panels with the same driver IC, can
   // have different gap value esp_lcd_panel_set_gap(panel_handle, 0, 20);
